@@ -3,6 +3,11 @@ from cmath import exp, pi
 import time
 import numpy as np
 import timeit
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from PIL import Image
+import cv2
+import scipy.misc
  
 
 def dft1D_unopt(x):	
@@ -133,8 +138,41 @@ def tests():
 	print('Do output of both functions match? {}'.format(np.allclose(f_1_output, f_2_output)))
 
 
+def testImage(imgName):
+	img = plt.imread(imgName).astype(np.float64)
+
+	fimg = fft2D(img)
+	fimg = np.fft.fftshift(fimg)
+	rows, cols = img.shape
+	crow, ccol = int(rows / 2), int(cols / 2)  # center
+
+	# Circular HPF mask, center circle is 0, remaining all ones
+	mask = np.ones((rows, cols), np.uint8)
+	r = 80
+	center = [crow, ccol]
+	x, y = np.ogrid[:rows, :cols]
+	mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+	mask[mask_area] = 0
+
+	# apply mask and inverse DFT
+	fimg = fimg * mask
+	f_ishift = np.fft.ifftshift(fimg)
+	img_back = np.abs(ifft2D(f_ishift))
+
+	print(np.allclose(img_back, img))
+	plt.imshow(np.abs(fimg)) 
+	plt.savefig("filtered")
+	plt.imshow(img_back)
+	plt.savefig("testing3")
+	plt.imshow(img) 
+	plt.savefig("original")
+	plt.imshow(img_back)
+	plt.show
+
+
 def main():
-	tests()
+	# tests()
+	testImage("A.tif")
 
 if __name__ == '__main__':
 	main()
