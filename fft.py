@@ -58,6 +58,11 @@ def fft2D(x):
 	second_result = np.asarray([fft1D_opt(first_result.T[col]) for col in range(first_result.shape[1])])
 	return(second_result.T)
 
+def dft2D(x):
+	first_result = np.asarray([dft1D_unopt(x[row]) for row in range(x.shape[0])])
+	second_result = np.asarray([dft1D_unopt(first_result.T[col]) for col in range(first_result.shape[1])])
+	return(second_result.T)
+
 def ifft2D(x):
 	first_result = np.asarray([inverse_fft1D(x[row]) for row in range(x.shape[0])])
 	second_result = np.asarray([inverse_fft1D(first_result.T[col]) for col in range(first_result.shape[1])])
@@ -108,6 +113,13 @@ def tests():
 	print("2D FFT took {} seconds, while Numpy 2D FFT took {} seconds".format(f_1_time, f_2_time))
 	print('Do output of both functions match? {}'.format(np.allclose(f_1_output, f_2_output)))
 
+	x = np.random.rand(256, 256)
+	start_time_2 = time.time()
+	f_2_output = dft2D(x)
+	f_2_time = time.time() - start_time_2
+	print("2D FFT took {} seconds, while 2D DFT took {} seconds".format(f_1_time, f_2_time))
+	print('Do output of both functions match? {}'.format(np.allclose(f_1_output, f_2_output)))
+
 	result = np.fft.fft2(x)
 	start_time_1 = time.time()
 	f_1_output = ifft2D(result)
@@ -123,8 +135,6 @@ def tests():
 
 def main():
 	tests()
-
-
 
 if __name__ == '__main__':
 	main()
