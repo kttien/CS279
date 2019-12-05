@@ -5,6 +5,7 @@ import numpy as np
 import timeit
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from PIL import Image
 import cv2
 import scipy.misc
@@ -138,41 +139,84 @@ def tests():
 	print('Do output of both functions match? {}'.format(np.allclose(f_1_output, f_2_output)))
 
 
-def testImage(imgName):
-	img = plt.imread(imgName).astype(np.float64)
+def show_orig(img):
+	img = plt.imread(img)
+	plt.imshow(img)
+	plt.savefig('original.png')
+	plt.show()
 
-	fimg = fft2D(img)
-	fimg = np.fft.fftshift(fimg)
-	rows, cols = img.shape
+def hpf_circular_mask(s, r):
+	
+	rows, cols = s
 	crow, ccol = int(rows / 2), int(cols / 2)  # center
 
 	# Circular HPF mask, center circle is 0, remaining all ones
 	mask = np.ones((rows, cols), np.uint8)
-	r = 80
+	r = 2
 	center = [crow, ccol]
 	x, y = np.ogrid[:rows, :cols]
 	mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
 	mask[mask_area] = 0
+	return mask
+
+def plot_comparisons(img, fimg, img_back):
+	fig, ax = plt.subplots(nrows=1, ncols=3)
+
+	ax[0].set_title("Original (log)")
+	ax0 = ax[0].imshow(np.log(img))
+	divider0 = make_axes_locatable(ax[0])
+	cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(ax0, cax=cax0)
+
+	ax[1].set_title("Fourier Transform (log)")
+	ax1 = ax[1].imshow(np.log(np.abs(fimg)))
+	divider1 = make_axes_locatable(ax[1])
+	cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(ax1, cax=cax1)
+
+	img_back[np.log(img_back) < 0] = 0
+	ax[2].set_title("Filtered (log)")
+	ax2 = ax[2].imshow(np.log(img_back))
+	divider2 = make_axes_locatable(ax[2])
+	cax2 = divider2.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(ax2, cax=cax2)
+
+	fig.tight_layout()
+	plt.savefig("plots_thresh_5_low_8_high_log")
+	plt.show
+
+def testImage(imgName):
+	# read image
+	img = plt.imread(imgName).astype(np.float64)
+
+	# run fft, shift frequencies, get mask
+	fimg = fft2D(img)
+	fimg = np.fft.fftshift(fimg)
+	# mask = hpf_circular_mask(img.shape, r = 5		#Uncomment this for mask based filter
+
+	# For filtering based on x% of maximum value in frequency domain:
+	fimg_threshold = fimg
+	max_val = np.amax(np.log(np.abs(fimg_threshold)))
+
+	# low_threshold = 0.5*max_val
+	high_threshold = 0.8*max_val
+
+	fimg_threshold[np.log(np.abs(fimg_threshold)) > high_threshold] = 0
 
 	# apply mask and inverse DFT
-	fimg = fimg * mask
-	f_ishift = np.fft.ifftshift(fimg)
+	# fimg = fimg * mask 		# Uncomment this for mask based filter
+	f_ishift = np.fft.ifftshift(fimg_threshold)
 	img_back = np.abs(ifft2D(f_ishift))
-
-	print(np.allclose(img_back, img))
-	plt.imshow(np.abs(fimg)) 
-	plt.savefig("filtered")
-	plt.imshow(img_back)
-	plt.savefig("testing3")
-	plt.imshow(img) 
-	plt.savefig("original")
-	plt.imshow(img_back)
-	plt.show
+	# plot images
+	plot_comparisons(img, fimg_threshold, img_back)
 
 
 def main():
 	# tests()
+	# testImage("A.tif")
+	# show_orig("A.tif")
 	testImage("A.tif")
+
 
 if __name__ == '__main__':
 	main()
