@@ -274,6 +274,36 @@ def test_filter_paramters(filename):
 
 
 '''
+Plots figure of fourier transform with filter applied along with reconstructed image
+and saves to appropriate folder.
+'''
+def plot_comparisons_mri(img, fimg, img_back, filter_type, param, show=False):
+	fig, ax = plt.subplots(nrows=1, ncols=2)
+	
+	ax[0].set_title("Fourier Transform (log)")
+	ax0 = ax[0].imshow(fimg)
+	divider0 = make_axes_locatable(ax[0])
+	cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(ax0, cax=cax0)
+
+	ax[1].set_title("Filtered (log)")
+	ax1 = ax[1].imshow(img_back)
+	divider1 = make_axes_locatable(ax[1])
+	cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(ax1, cax=cax1)
+
+	fig.tight_layout()
+	if filter_type == "hp":
+		paramlabel = "r={}".format(str(param))
+	else:
+		paramlabel = "%={}".format(str(param))
+	plt.title("{} {}".format(filter_type, paramlabel))
+	output_filename = "cell_plots/mri_{}_{}".format(filter_type, str(param))
+	print(output_filename)
+	plt.savefig(output_filename)
+	if show: plt.show()
+
+'''
 Code to take in the single file fully sampled kspace image from:
 https://www.cis.rit.edu/htbooks/mri/chap-10/detail/det-h-1.html
 Code written to first read in data from unique text file specific
@@ -287,14 +317,38 @@ def fullly_sampled_k_space(filename):
 			vals = line[0].split()
 			val = complex(float(vals[0]), float(vals[1]))
 			c_vals.append(val)
+
+
 	c_vals = np.reshape(c_vals, (256, 256)).T
 	plt.imshow(np.log(np.abs(c_vals)))
-	plt.show()
+	plt.savefig("cell_plots/full_k_space")
 
 	c_shifted = np.fft.fftshift(c_vals)
 	c_f = fft2D(c_shifted)
 	plt.imshow(np.abs(np.fft.fftshift(c_f)))
-	plt.show()
+	original = np.abs(np.fft.fftshift(c_f))
+	plt.savefig("cell_plots/fully_transformed_MRI_image")
+
+	for size in [110, 120, 125, 130, 135]:
+		c_vals2 = c_vals
+		max_val = np.amax(np.log(np.abs(c_vals2)))
+		high_threshold = (max_val/100.)*size
+		c_vals2[np.log(np.abs(c_vals2)) > high_threshold] = 0
+		c_shifted = np.fft.fftshift(c_vals2)
+		c_f = fft2D(c_shifted)
+
+		plt.imshow(np.abs(np.fft.fftshift(c_f)))
+		plt.savefig("cell_plots/filtered_fully_transformed_MRI_image")
+		plt.colorbar()
+		filt = np.abs(np.fft.fftshift(c_f))
+
+		plt.imshow(np.log(np.abs(c_vals2)))
+		plt.savefig("cell_plots/filtered_fully_transformed_MRI_image")
+		plt.colorbar()
+		kspace = np.log(np.abs(c_vals2))
+		plot_comparisons_mri(original, kspace, filt, "thresh", size)
+
+
 
 
 '''
@@ -353,7 +407,7 @@ Un-Comment to run program.
 def main():
 	# test_complexity()
 	# test_filter_paramters("input_images/A.tif")
-	# fullly_sampled_k_space("input_images/mrimage1d.txt")
+	fullly_sampled_k_space("input_images/mrimage1d.txt")
 	# nyu_dataset('input_images/file1000022_v2.h5')
 
 if __name__ == '__main__':
