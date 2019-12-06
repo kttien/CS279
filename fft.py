@@ -354,7 +354,7 @@ def main():
 	# test_complexity()
 	# test_filter_paramters("input_images/A.tif")
 	# fullly_sampled_k_space("input_images/mrimage1d.txt")
-	# nyu_dataset('input_images/singlecoil_test_v2/file1000022_v2.h5')
+	# nyu_dataset('input_images/file1000022_v2.h5')
 
 if __name__ == '__main__':
 	main()
