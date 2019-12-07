@@ -179,7 +179,8 @@ def tests():
 
 '''
 Returns circular mask for a high pass filter of FT data. Takes in the image
-shape and desired radius of mask and returns mask of 0 pixel intensity.
+shape and desired radius of mask and returns mask of 0 pixel intensity. Adapted from 
+https://akshaysin.github.io/fourier_transform.html#.XesPjC2ZPPB.
 '''
 def hpf_circular_mask(s, r):
 	rows, cols = s
